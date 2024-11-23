@@ -8,6 +8,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
@@ -30,11 +31,37 @@ public class WebSecurity {
                 )
                 .oauth2Login(Customizer.withDefaults())
                 .logout(logout -> logout
-                        .logoutSuccessHandler(oidcLogoutSuccessHandler())
-                        .invalidateHttpSession(true)
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            if (authentication != null && authentication.getPrincipal() instanceof OidcUser) {
+                                OidcUser oidcUser = (OidcUser) authentication.getPrincipal();
+
+                                // Lấy id_token
+                                String idToken = oidcUser.getIdToken().getTokenValue();
+
+                                // URL logout của Keycloak
+                                String logoutUri = "http://localhost:8080/realms/appsdeveloperblog/protocol/openid-connect/logout";
+                                String postLogoutRedirectUri = "http://localhost:8099";
+
+                                // Thêm id_token_hint vào URL
+                                logoutUri += "?id_token_hint=" + idToken + "&post_logout_redirect_uri=" + postLogoutRedirectUri;
+
+                                // Redirect tới Keycloak để logout
+                                response.sendRedirect(logoutUri);
+                            } else {
+                                // Trường hợp không có Authentication, chuyển về trang chính
+                                response.sendRedirect("/");
+                            }
+                        })
+                                .invalidateHttpSession(true)
                         .clearAuthentication(true)
                         .deleteCookies("JSESSIONID")
                 );
+//                .logout(logout -> logout
+//                        .logoutSuccessHandler(oidcLogoutSuccessHandler())
+//                        .invalidateHttpSession(true)
+//                        .clearAuthentication(true)
+//                        .deleteCookies("JSESSIONID")
+//                );
 
         return http.build();
     }
