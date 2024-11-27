@@ -1,13 +1,24 @@
 package com.appsdeveloperblog.keycloak.MyRemoteUserStorateProvider;
 
+import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 
 public class RemoteUserStorageProvider implements UserStorageProvider, UserLookupProvider, CredentialInputValidator {
+
+    private KeycloakSession keycloakSession;
+    private ComponentModel componentModel;
+
+    public RemoteUserStorageProvider(KeycloakSession keycloakSession, ComponentModel componentModel) {
+        this.keycloakSession = keycloakSession;
+        this.componentModel = componentModel;
+    }
+
     @Override
     public void close() {
 
